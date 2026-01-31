@@ -1,0 +1,228 @@
+{% load static %}
+
+<!-- Design Mode Sidebar -->
+<div class="design-sidebar" id="designSidebar">
+    <div class="sidebar-header">
+        <h3>🎨 Design Mode</h3>
+        <button class="close-sidebar" onclick="closeDesignMode()">✕</button>
+    </div>
+    
+    <div class="sidebar-content">
+        <div class="design-section">
+            <h4>Selected Field</h4>
+            <p class="selected-field-name" id="selectedFieldName">None</p>
+        </div>
+        
+        <div class="design-section">
+            <label>Label Text</label>
+            <input type="text" id="editLabel" class="design-input" placeholder="Field label">
+        </div>
+        
+        <div class="design-section">
+            <label>Field Width</label>
+            <select id="editWidth" class="design-input">
+                <option value="25%">25% (4 columns)</option>
+                <option value="33.33%">33.33% (3 columns)</option>
+                <option value="50%">50% (2 columns)</option>
+                <option value="66.66%">66.66% (3/4 width)</option>
+                <option value="75%">75% (3/4 width)</option>
+                <option value="100%">100% (Full width)</option>
+                <option value="custom">Custom...</option>
+            </select>
+            <input type="text" id="customWidth" class="design-input" placeholder="e.g., 300px or 40%" style="display: none; margin-top: 10px;">
+        </div>
+        
+        <div class="design-section">
+            <label>Position</label>
+            <div class="position-controls">
+                <button class="btn-icon" onclick="moveFieldUp()" title="Move Up">⬆️</button>
+                <button class="btn-icon" onclick="moveFieldDown()" title="Move Down">⬇️</button>
+            </div>
+        </div>
+        
+        <div class="design-section">
+            <label>Required Field</label>
+            <input type="checkbox" id="editRequired">
+        </div>
+        
+        <div class="design-section">
+            <button class="btn btn-primary" onclick="applyFieldChanges()">Apply Changes</button>
+            <button class="btn btn-secondary" onclick="cancelFieldEdit()">Cancel</button>
+        </div>
+        
+        <div class="design-section">
+            <h4>Form Layout</h4>
+            <button class="btn btn-success" onclick="saveFormLayout()">💾 Save Layout</button>
+            <button class="btn btn-warning" onclick="resetFormLayout()">🔄 Reset Layout</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Overlay -->
+<div class="modal-form-overlay" id="modal-overlay-{{ form_id }}" onclick="closeFormOverlay('{{ form_id }}')"></div>
+
+<!-- Universal Form Container -->
+<div class="modal-form-container" id="{{ form_id }}" data-state="normal" data-background="{{ background|default:'white' }}">
+    
+    <!-- Form Header -->
+    <div class="form-header">
+        <div class="form-title">
+            <span class="form-icon">{{ icon|default:'📝' }}</span>
+            <h3>{{ title }}</h3>
+        </div>
+        <div class="form-controls">
+            <button type="button" class="btn-control btn-minimize" 
+                    onclick="minimizeFormAndRedirect('{{ form_id }}', '{{ title }}', '{{ icon|default:'📝' }}')" 
+                    title="Minimize">
+                <span>_</span>
+            </button>
+            <button type="button" class="btn-control btn-maximize" 
+                    onclick="maximizeForm('{{ form_id }}')" 
+                    title="Maximize">
+                <span>□</span>
+            </button>
+            <button type="button" class="btn-control btn-close" 
+                    onclick="closeFormOverlay('{{ form_id }}')" 
+                    title="Close">
+                <span>✕</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Action Buttons Area -->
+    <div class="form-button-area">
+        {% for button in buttons %}
+        <button type="button" class="btn btn-{{ button.type|default:'secondary' }}" onclick="{{ button.onclick }}">
+            {% if button.icon %}<span class="btn-icon">{{ button.icon }}</span>{% endif %} {{ button.label }}
+        </button>
+        {% endfor %}
+        
+        <!-- Menu Button with Dropdown -->
+        {% if menu_items %}
+        <div class="dropdown-wrapper">
+            <button type="button" class="btn btn-secondary" onclick="toggleMenu()">
+                <span class="btn-icon">☰</span> Menu
+            </button>
+            <div class="dropdown-menu" id="menuDropdown">
+                <a href="#" onclick="openDesignMode(); return false;">✏️ Design Columns</a>
+                {% for menu_item in menu_items %}
+                <a href="#" onclick="{{ menu_item.onclick }}; return false;">{{ menu_item.icon }} {{ menu_item.label }}</a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Form Content Area -->
+    <div class="form-content">
+        <form method="post" action="{{ action }}" id="{{ form_id }}-form">
+            {% csrf_token %}
+            
+            <!-- Ungrouped Fields Container -->
+            {% if fields|length > 0 %}
+            <div class="ungrouped-fields-section" id="ungrouped-fields">
+                <div class="fields-container">
+                    {% for field in fields %}
+                        {% if not field.group %}
+                            <div class="form-field-wrapper" data-field-name="{{ field.name }}" style="width: {{ field.width|default:'100%' }}; flex: 0 0 {{ field.width|default:'100%' }};">
+                                <label {% if field.required %}class="required"{% endif %}>{{ field.label }}</label>
+                                {% if field.type == 'select' %}
+                                    <select name="{{ field.name }}" {% if field.required %}required{% endif %}>
+                                        <option value="">{{ field.placeholder|default:'Select...' }}</option>
+                                        {% for option in field.options %}
+                                            <option value="{{ option.value }}">{{ option.label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                {% elif field.type == 'textarea' %}
+                                    <textarea name="{{ field.name }}" placeholder="{{ field.placeholder }}" {% if field.required %}required{% endif %}></textarea>
+                                {% elif field.type == 'checkbox' %}
+                                    <input type="checkbox" name="{{ field.name }}" {% if field.required %}required{% endif %}>
+                                {% else %}
+                                    <input type="{{ field.type }}" name="{{ field.name }}" placeholder="{{ field.placeholder }}" {% if field.required %}required{% endif %}>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Horizontal Group Tabs -->
+            {% if groups %}
+            <div class="group-tabs-container">
+                {% for group in groups %}
+                <div class="group-tab" id="tab-{{ group.id }}" onclick="selectGroup('{{ group.id }}')">
+                    <span class="group-tab-icon">{{ group.icon }}</span>
+                    <span class="group-tab-title">{{ group.title }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Field Groups Content -->
+            {% for group in groups %}
+            <div class="form-group-content-area" id="group-content-{{ group.id }}" style="display: none;">
+                <div class="fields-container">
+                    {% for field in fields %}
+                        {% if field.group == group.id %}
+                            <div class="form-field-wrapper" data-field-name="{{ field.name }}" style="width: {{ field.width|default:'100%' }}; flex: 0 0 {{ field.width|default:'100%' }};">
+                                <label {% if field.required %}class="required"{% endif %}>{{ field.label }}</label>
+                                {% if field.type == 'select' %}
+                                    <select name="{{ field.name }}" {% if field.required %}required{% endif %}>
+                                        <option value="">{{ field.placeholder|default:'Select...' }}</option>
+                                        {% for option in field.options %}
+                                            <option value="{{ option.value }}">{{ option.label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                {% elif field.type == 'textarea' %}
+                                    <textarea name="{{ field.name }}" placeholder="{{ field.placeholder }}" {% if field.required %}required{% endif %}></textarea>
+                                {% elif field.type == 'checkbox' %}
+                                    <input type="checkbox" name="{{ field.name }}" {% if field.required %}required{% endif %}>
+                                {% else %}
+                                    <input type="{{ field.type }}" name="{{ field.name }}" placeholder="{{ field.placeholder }}" {% if field.required %}required{% endif %}>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+            {% endif %}
+            
+        </form>
+    </div>
+
+    {% comment %} <!-- Form Footer -->
+    <div class="form-footer">
+        <div class="form-info">
+            <span class="form-status">{{ footer_status|default:'Ready' }}</span>
+        </div>
+    </div> {% endcomment %}
+
+</div>
+
+<script>
+// Minimize form and redirect to home with form data in sessionStorage
+function minimizeFormAndRedirect(formId, formTitle, formIcon) {
+    // Get the current URL to restore later
+    const currentUrl = window.location.href;
+    
+    // Store minimized form info in sessionStorage
+    const minimizedForms = JSON.parse(sessionStorage.getItem('minimizedForms') || '[]');
+    
+    // Check if form is already minimized
+    const existingIndex = minimizedForms.findIndex(f => f.id === formId);
+    if (existingIndex === -1) {
+        minimizedForms.push({
+            id: formId,
+            title: formTitle,
+            icon: formIcon,
+            url: currentUrl,
+            timestamp: Date.now()
+        });
+        sessionStorage.setItem('minimizedForms', JSON.stringify(minimizedForms));
+    }
+    
+    // Redirect to home page
+    window.location.href = '/';  // Use root URL or configure dynamically
+}
+</script>

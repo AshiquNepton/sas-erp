@@ -1,0 +1,72 @@
+{% extends 'common/base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'common/css/colors.css' %}">
+<link rel="stylesheet" href="{% static 'common/css/universal_form.css' %}">
+{% endblock %}
+
+{% block content %}
+{% include 'common/includes/universal_form.html' with form_id=db_form_config.form_id title=db_form_config.title icon=db_form_config.icon action=db_form_config.action background=db_form_config.background buttons=db_form_config.buttons menu_items=db_form_config.menu_items groups=db_form_config.groups fields=db_form_config.fields footer_status=db_form_config.footer_status %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'common/js/universal_form.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() {
+        if (typeof openForm === 'function') {
+            openForm('{{ db_form_config.form_id }}');
+        }
+    }, 100);
+});
+
+window.customCloseFormOverlay = function(formId) {
+    window.location.href = "{% url 'common:home' %}";
+};
+
+function testConnection() {
+    const form = document.getElementById('{{ db_form_config.form_id }}-form');
+    if (!form) return;
+    if (!form.checkValidity()) { form.reportValidity(); return; }
+    
+    const formData = new FormData(form);
+    const btn = event.target;
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<span class="btn-icon">⏳</span> Testing...';
+    btn.disabled = true;
+    
+    fetch('/settings/test-database/', {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-CSRFToken': formData.get('csrfmiddlewaretoken') }
+    })
+    .then(response => response.json())
+    .then(data => {
+        btn.innerHTML = originalHTML;
+        btn.disabled = false;
+        if (data.success) {
+            alert('✅ Connection Successful!\n\n' + (data.message || 'Connected') + '\n\nYou can now save.');
+        } else {
+            alert('❌ Connection Failed\n\n' + data.error);
+        }
+    })
+    .catch(error => {
+        btn.innerHTML = originalHTML;
+        btn.disabled = false;
+        alert('❌ Error: ' + error);
+    });
+}
+
+function saveDatabase() {
+    const form = document.getElementById('{{ db_form_config.form_id }}-form');
+    if (!form) return;
+    if (!form.checkValidity()) { form.reportValidity(); return; }
+    if (confirm('Save database configuration?\n\nRestart server after saving.')) {
+        form.submit();
+    }
+}
+</script>
+{% endblock %}

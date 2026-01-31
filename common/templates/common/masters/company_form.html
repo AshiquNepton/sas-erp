@@ -1,0 +1,528 @@
+{% extends 'common/base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title|default:"Company Information" }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'common/css/universal_form.css' %}">
+<style>
+/* Loading indicator for lookup */
+.lookup-loading {
+    position: relative;
+}
+
+.lookup-loading::after {
+    content: '🔍';
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.record-found {
+    border-color: #28a745 !important;
+    background-color: #f0fff4 !important;
+}
+
+.record-not-found {
+    border-color: #ffc107 !important;
+    background-color: #fffbf0 !important;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+{% include 'common/includes/universal_form.html' with form_id=form_config.form_id title=form_config.title icon=form_config.icon action=form_config.action background=form_config.background buttons=form_config.buttons menu_items=form_config.menu_items groups=form_config.groups fields=form_config.fields footer_status=form_config.footer_status %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'common/js/universal_form.js' %}"></script>
+
+<script>
+// ============================================================================
+// CONFIGURATION
+// ============================================================================
+const LOOKUP_CONFIG = {
+    lookupUrl: "{% url 'common:lookup_company' %}",
+    debounceDelay: 500,  // ms delay before lookup
+    lookupField: 'company_code',  // Field that triggers lookup
+    lookupDbField: 'CompanyId'  // Database field name
+};
+
+// ============================================================================
+// DEBOUNCE UTILITY
+// ============================================================================
+function debounce(func, delay) {
+    let timeoutId;
+    return function(...args) {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => func.apply(this, args), delay);
+    };
+}
+
+// ============================================================================
+// RECORD LOOKUP FUNCTION (REUSABLE)
+// ============================================================================
+/**
+ * Generic function to lookup and populate form based on field value
+ * 
+ * @param {string} fieldName - Frontend field name (e.g., 'company_code')
+ * @param {string} fieldValue - Value to search for
+ * @param {string} dbFieldName - Database field name (e.g., 'CompanyId')
+ * @param {string} lookupUrl - API endpoint URL
+ * @param {string} formId - Form ID to populate
+ */
+function lookupRecord(fieldName, fieldValue, dbFieldName, lookupUrl, formId) {
+    console.log(`[Lookup] Searching ${dbFieldName}=${fieldValue}`);
+    
+    // Don't lookup empty values
+    if (!fieldValue || fieldValue.trim() === '') {
+        return;
+    }
+    
+    const inputField = document.querySelector(`[name="${fieldName}"]`);
+    
+    // Add loading indicator
+    if (inputField) {
+        inputField.classList.add('lookup-loading');
+        inputField.classList.remove('record-found', 'record-not-found');
+    }
+    
+    // Construct lookup URL with parameters
+    const url = `${lookupUrl}?field=${encodeURIComponent(dbFieldName)}&value=${encodeURIComponent(fieldValue)}`;
+    
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            console.log('[Lookup] Response:', data);
+            
+            // Remove loading indicator
+            if (inputField) {
+                inputField.classList.remove('lookup-loading');
+            }
+            
+            if (data.success && data.data) {
+                // Record found - populate form
+                console.log('[Lookup] Record found, populating form');
+                populateFormData(formId, data.data);
+                
+                // Visual feedback
+                if (inputField) {
+                    inputField.classList.add('record-found');
+                }
+                
+                // Show notification (optional)
+                showNotification('✅ Record loaded', 'success');
+            } else {
+                // Record not found
+                console.log('[Lookup] Record not found');
+                
+                // Visual feedback
+                if (inputField) {
+                    inputField.classList.add('record-not-found');
+                }
+                
+                // Clear other fields except the lookup field
+                clearFormExcept(formId, fieldName);
+            }
+        })
+        .catch(error => {
+            console.error('[Lookup] Error:', error);
+            
+            // Remove loading indicator
+            if (inputField) {
+                inputField.classList.remove('lookup-loading');
+            }
+            
+            // Show error notification
+            showNotification('❌ Lookup failed: ' + error.message, 'error');
+        });
+}
+
+// ============================================================================
+// FORM POPULATION UTILITY
+// ============================================================================
+/**
+ * Populate form fields with data
+ * 
+ * @param {string} formId - Form ID
+ * @param {object} data - Data object with field names and values
+ */
+function populateFormData(formId, data) {
+    const form = document.getElementById(`${formId}-form`);
+    if (!form) {
+        console.error(`[Populate] Form not found: ${formId}-form`);
+        return;
+    }
+    
+    console.log('[Populate] Filling form with data:', data);
+    
+    Object.keys(data).forEach(fieldName => {
+        const field = form.querySelector(`[name="${fieldName}"]`);
+        if (field) {
+            const value = data[fieldName];
+            
+            if (field.type === 'checkbox') {
+                field.checked = value === true || value === 1 || value === '1' || value === 'on';
+            } else if (field.type === 'radio') {
+                const radio = form.querySelector(`[name="${fieldName}"][value="${value}"]`);
+                if (radio) radio.checked = true;
+            } else {
+                field.value = value || '';
+            }
+            
+            console.log(`[Populate] ${fieldName} = ${value}`);
+        }
+    });
+}
+
+// ============================================================================
+// CLEAR FORM UTILITY
+// ============================================================================
+/**
+ * Clear all form fields except specified ones
+ * 
+ * @param {string} formId - Form ID
+ * @param {string|array} exceptFields - Field name(s) to keep
+ */
+function clearFormExcept(formId, exceptFields) {
+    const form = document.getElementById(`${formId}-form`);
+    if (!form) return;
+    
+    // Convert to array if single string
+    const keepFields = Array.isArray(exceptFields) ? exceptFields : [exceptFields];
+    
+    console.log('[Clear] Clearing form except:', keepFields);
+    
+    const inputs = form.querySelectorAll('input, select, textarea');
+    inputs.forEach(input => {
+        if (!keepFields.includes(input.name) && input.name !== 'csrfmiddlewaretoken') {
+            if (input.type === 'checkbox' || input.type === 'radio') {
+                input.checked = false;
+            } else {
+                input.value = '';
+            }
+        }
+    });
+    
+    // Reset default dates
+    setDefaultDates();
+}
+
+// ============================================================================
+// NOTIFICATION UTILITY
+// ============================================================================
+function showNotification(message, type = 'info') {
+    // Simple notification - can be replaced with a proper notification library
+    const colors = {
+        success: '#28a745',
+        error: '#dc3545',
+        warning: '#ffc107',
+        info: '#17a2b8'
+    };
+    
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${colors[type] || colors.info};
+        color: white;
+        padding: 12px 20px;
+        border-radius: 4px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        z-index: 10000;
+        animation: slideIn 0.3s ease-out;
+    `;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease-out';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+// Add animation styles
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from { transform: translateX(400px); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(400px); opacity: 0; }
+    }
+`;
+document.head.appendChild(style);
+
+// ============================================================================
+// INITIALIZATION
+// ============================================================================
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('=== COMPANY FORM WITH AUTO-LOOKUP ===');
+    
+    if (typeof openForm === 'function') {
+        openForm('{{ form_config.form_id }}');
+        setTimeout(initializeLookup, 200);
+        setTimeout(setDefaultDates, 200);
+    }
+});
+
+/**
+ * Initialize auto-lookup on the lookup field
+ */
+function initializeLookup() {
+    const form = document.getElementById('{{ form_config.form_id }}-form');
+    if (!form) {
+        console.error('[Lookup] Form not found');
+        return;
+    }
+    
+    const lookupField = form.querySelector(`[name="${LOOKUP_CONFIG.lookupField}"]`);
+    if (!lookupField) {
+        console.error(`[Lookup] Field not found: ${LOOKUP_CONFIG.lookupField}`);
+        return;
+    }
+    
+    console.log(`[Lookup] Initialized on field: ${LOOKUP_CONFIG.lookupField}`);
+    
+    // Create debounced lookup function
+    const debouncedLookup = debounce((value) => {
+        lookupRecord(
+            LOOKUP_CONFIG.lookupField,
+            value,
+            LOOKUP_CONFIG.lookupDbField,
+            LOOKUP_CONFIG.lookupUrl,
+            '{{ form_config.form_id }}'
+        );
+    }, LOOKUP_CONFIG.debounceDelay);
+    
+    // Attach event listeners
+    lookupField.addEventListener('input', (e) => {
+        debouncedLookup(e.target.value);
+    });
+    
+    lookupField.addEventListener('blur', (e) => {
+        // Immediate lookup on blur (when user leaves field)
+        const value = e.target.value;
+        if (value && value.trim() !== '') {
+            lookupRecord(
+                LOOKUP_CONFIG.lookupField,
+                value,
+                LOOKUP_CONFIG.lookupDbField,
+                LOOKUP_CONFIG.lookupUrl,
+                '{{ form_config.form_id }}'
+            );
+        }
+    });
+    
+    console.log('[Lookup] Event listeners attached');
+}
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+// Set default dates for period fields
+function setDefaultDates() {
+    const currentYear = new Date().getFullYear();
+    const periodFromField = document.querySelector('[name="period_from"]');
+    const periodToField = document.querySelector('[name="period_to"]');
+    
+    if (periodFromField && !periodFromField.value) {
+        periodFromField.value = `${currentYear}-01-01`;
+    }
+    
+    if (periodToField && !periodToField.value) {
+        periodToField.value = `${currentYear}-12-31`;
+    }
+}
+
+// Get CSRF token from cookie
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Custom close handler
+window.customCloseFormOverlay = function(formId) {
+    window.location.href = "{% url 'common:home' %}";
+};
+
+// ============================================================================
+// COMPANY ACTION FUNCTIONS
+// ============================================================================
+
+function newCompany() {
+    if (confirm('Create a new company record? This will clear the current form.')) {
+        const form = document.getElementById('{{ form_config.form_id }}-form');
+        if (form) {
+            form.reset();
+            setDefaultDates();
+            
+            // Remove visual feedback classes
+            const inputs = form.querySelectorAll('input');
+            inputs.forEach(input => {
+                input.classList.remove('record-found', 'record-not-found', 'lookup-loading');
+            });
+        }
+    }
+}
+
+function saveCompany() {
+    const form = document.getElementById('{{ form_config.form_id }}-form');
+    
+    if (!form) {
+        alert('Error: Form not found');
+        return;
+    }
+    
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+    
+    const formData = new FormData(form);
+    const csrftoken = getCookie('csrftoken');
+    const saveUrl = "{% url 'common:save_company' %}";
+    
+    // Show loading state
+    const saveButton = event.target;
+    const originalText = saveButton ? saveButton.textContent : '';
+    if (saveButton) {
+        saveButton.disabled = true;
+        saveButton.textContent = '💾 Saving...';
+    }
+    
+    fetch(saveUrl, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': csrftoken || formData.get('csrfmiddlewaretoken') || ''
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (saveButton) {
+            saveButton.disabled = false;
+            saveButton.textContent = originalText;
+        }
+        
+        if (data.success) {
+            showNotification(`✅ ${data.message}`, 'success');
+            
+            if (data.company_id) {
+                const companyCodeField = form.querySelector('[name="company_code"]');
+                if (companyCodeField) {
+                    companyCodeField.value = data.company_id;
+                }
+            }
+        } else {
+            showNotification(`❌ ${data.error}`, 'error');
+        }
+    })
+    .catch(error => {
+        if (saveButton) {
+            saveButton.disabled = false;
+            saveButton.textContent = originalText;
+        }
+        showNotification(`❌ ${error.message}`, 'error');
+    });
+}
+
+function deleteCompany() {
+    const form = document.getElementById('{{ form_config.form_id }}-form');
+    if (!form) return;
+    
+    const formData = new FormData(form);
+    const companyId = formData.get('company_code');
+    const companyName = formData.get('company_name');
+    
+    if (!companyId) {
+        showNotification('⚠️ No company selected', 'warning');
+        return;
+    }
+    
+    if (confirm(`⚠️ Delete "${companyName}" (ID: ${companyId})?\n\nThis action cannot be undone.`)) {
+        const csrftoken = getCookie('csrftoken');
+        const deleteUrl = "{% url 'common:delete_company' company_id=0 %}".replace('/0/', `/${companyId}/`);
+        
+        fetch(deleteUrl, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken || formData.get('csrfmiddlewaretoken') || ''
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification(`✅ ${data.message}`, 'success');
+                form.reset();
+                setDefaultDates();
+            } else {
+                showNotification(`❌ ${data.error}`, 'error');
+            }
+        })
+        .catch(error => {
+            showNotification(`❌ ${error.message}`, 'error');
+        });
+    }
+}
+
+function printCompany() {
+    window.print();
+}
+
+function exportCompany() {
+    const form = document.getElementById('{{ form_config.form_id }}-form');
+    if (!form) return;
+    
+    const formData = new FormData(form);
+    const companyData = {};
+    
+    for (let [key, value] of formData.entries()) {
+        if (key !== 'csrfmiddlewaretoken') {
+            companyData[key] = value;
+        }
+    }
+    
+    const dataStr = JSON.stringify(companyData, null, 2);
+    const dataBlob = new Blob([dataStr], {type: 'application/json'});
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `company_${companyData.company_code || 'export'}_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    showNotification('📤 Company data exported', 'success');
+}
+
+function companySettings() {
+    showNotification('⚙️ Settings coming soon...', 'info');
+}
+</script>
+{% endblock %}

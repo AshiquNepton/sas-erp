@@ -1,0 +1,1351 @@
+{% comment %} <!-- common/templates/common/includes/alerts.html -->
+
+<!-- Alert Modal -->
+<div class="custom-alert-overlay" id="customAlertOverlay">
+    <div class="custom-alert-modal">
+        <div class="custom-alert-header" id="alertHeader">
+            <span class="custom-alert-icon" id="alertIcon"></span>
+            <h3 class="custom-alert-title" id="alertTitle"></h3>
+        </div>
+        <div class="custom-alert-body">
+            <p class="custom-alert-message" id="alertMessage"></p>
+        </div>
+        <div class="custom-alert-footer">
+            <button class="btn-alert btn-alert-primary" id="alertOkBtn" onclick="closeAlert()">OK</button>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="custom-confirm-overlay" id="customConfirmOverlay">
+    <div class="custom-confirm-modal">
+        <div class="custom-confirm-header" id="confirmHeader">
+            <span class="custom-confirm-icon" id="confirmIcon"></span>
+            <h3 class="custom-confirm-title" id="confirmTitle"></h3>
+        </div>
+        <div class="custom-confirm-body">
+            <p class="custom-confirm-message" id="confirmMessage"></p>
+        </div>
+        <div class="custom-confirm-footer">
+            <button class="btn-confirm btn-confirm-secondary" id="confirmCancelBtn" onclick="closeConfirm(false)">Cancel</button>
+            <button class="btn-confirm btn-confirm-primary" id="confirmOkBtn" onclick="closeConfirm(true)">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Notification Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<style>
+/* Alert Modal Styles */
+.custom-alert-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.2s ease;
+}
+
+.custom-alert-overlay.show {
+    display: flex;
+}
+
+.custom-alert-modal {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    min-width: 400px;
+    max-width: 600px;
+    animation: slideDown 0.3s ease;
+    overflow: hidden;
+}
+
+.custom-alert-header {
+    padding: 25px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.custom-alert-header.alert-success {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    border-bottom: none;
+}
+
+.custom-alert-header.alert-error {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    color: white;
+    border-bottom: none;
+}
+
+.custom-alert-header.alert-warning {
+    background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+    color: #212529;
+    border-bottom: none;
+}
+
+.custom-alert-header.alert-info {
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    color: white;
+    border-bottom: none;
+}
+
+.custom-alert-icon {
+    font-size: 32px;
+    line-height: 1;
+}
+
+.custom-alert-title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.custom-alert-body {
+    padding: 25px;
+}
+
+.custom-alert-message {
+    margin: 0;
+    font-size: 16px;
+    color: #495057;
+    line-height: 1.6;
+}
+
+.custom-alert-footer {
+    padding: 20px 25px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    background: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+}
+
+.btn-alert {
+    padding: 10px 24px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 80px;
+}
+
+.btn-alert-primary {
+    background: #007bff;
+    color: white;
+}
+
+.btn-alert-primary:hover {
+    background: #0056b3;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+}
+
+/* Confirmation Modal Styles */
+.custom-confirm-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.2s ease;
+}
+
+.custom-confirm-overlay.show {
+    display: flex;
+}
+
+.custom-confirm-modal {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    min-width: 450px;
+    max-width: 600px;
+    animation: slideDown 0.3s ease;
+    overflow: hidden;
+}
+
+.custom-confirm-header {
+    padding: 25px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.custom-confirm-header.confirm-danger {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    color: white;
+    border-bottom: none;
+}
+
+.custom-confirm-header.confirm-warning {
+    background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+    color: #212529;
+    border-bottom: none;
+}
+
+.custom-confirm-header.confirm-info {
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    color: white;
+    border-bottom: none;
+}
+
+.custom-confirm-icon {
+    font-size: 32px;
+    line-height: 1;
+}
+
+.custom-confirm-title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.custom-confirm-body {
+    padding: 25px;
+}
+
+.custom-confirm-message {
+    margin: 0;
+    font-size: 16px;
+    color: #495057;
+    line-height: 1.6;
+}
+
+.custom-confirm-footer {
+    padding: 20px 25px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    background: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+}
+
+.btn-confirm {
+    padding: 10px 24px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 100px;
+}
+
+.btn-confirm-primary {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-confirm-primary:hover {
+    background: #c82333;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+}
+
+.btn-confirm-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-confirm-secondary:hover {
+    background: #5a6268;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
+}
+
+/* Toast Notification Styles */
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+}
+
+.toast {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    padding: 16px 20px;
+    min-width: 300px;
+    max-width: 400px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    pointer-events: auto;
+    animation: slideInRight 0.3s ease;
+    border-left: 4px solid #007bff;
+}
+
+.toast.toast-success {
+    border-left-color: #28a745;
+}
+
+.toast.toast-error {
+    border-left-color: #dc3545;
+}
+
+.toast.toast-warning {
+    border-left-color: #ffc107;
+}
+
+.toast.toast-info {
+    border-left-color: #17a2b8;
+}
+
+.toast-icon {
+    font-size: 24px;
+    line-height: 1;
+}
+
+.toast-content {
+    flex: 1;
+}
+
+.toast-title {
+    font-weight: 600;
+    font-size: 14px;
+    margin: 0 0 4px 0;
+    color: #212529;
+}
+
+.toast-message {
+    font-size: 13px;
+    margin: 0;
+    color: #6c757d;
+}
+
+.toast-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #6c757d;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.toast-close:hover {
+    background: #f8f9fa;
+    color: #212529;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .custom-alert-modal,
+    .custom-confirm-modal {
+        min-width: 90vw;
+        margin: 20px;
+    }
+    
+    .toast-container {
+        left: 20px;
+        right: 20px;
+    }
+    
+    .toast {
+        min-width: auto;
+        max-width: none;
+    }
+}
+</style>
+
+<script>
+// Alert Configuration
+const alertConfig = {
+    success: {
+        icon: '✅',
+        title: 'Success',
+        headerClass: 'alert-success'
+    },
+    error: {
+        icon: '❌',
+        title: 'Error',
+        headerClass: 'alert-error'
+    },
+    warning: {
+        icon: '⚠️',
+        title: 'Warning',
+        headerClass: 'alert-warning'
+    },
+    info: {
+        icon: 'ℹ️',
+        title: 'Information',
+        headerClass: 'alert-info'
+    }
+};
+
+// Confirmation Configuration
+const confirmConfig = {
+    danger: {
+        icon: '⚠️',
+        title: 'Confirm Action',
+        headerClass: 'confirm-danger'
+    },
+    warning: {
+        icon: '⚠️',
+        title: 'Are you sure?',
+        headerClass: 'confirm-warning'
+    },
+    info: {
+        icon: 'ℹ️',
+        title: 'Confirmation',
+        headerClass: 'confirm-info'
+    }
+};
+
+/**
+ * Show custom alert
+ * @param {string} message - The message to display
+ * @param {string} type - Alert type: 'success', 'error', 'warning', 'info'
+ * @param {string} title - Optional custom title
+ */
+function showAlert(message, type = 'info', title = null) {
+    const config = alertConfig[type] || alertConfig.info;
+    const overlay = document.getElementById('customAlertOverlay');
+    const header = document.getElementById('alertHeader');
+    const icon = document.getElementById('alertIcon');
+    const titleEl = document.getElementById('alertTitle');
+    const messageEl = document.getElementById('alertMessage');
+    
+    // Set content
+    icon.textContent = config.icon;
+    titleEl.textContent = title || config.title;
+    messageEl.textContent = message;
+    
+    // Set header style
+    header.className = 'custom-alert-header ' + config.headerClass;
+    
+    // Show modal
+    overlay.classList.add('show');
+    
+    // Focus OK button
+    setTimeout(() => {
+        document.getElementById('alertOkBtn').focus();
+    }, 100);
+}
+
+/**
+ * Close alert
+ */
+function closeAlert() {
+    const overlay = document.getElementById('customAlertOverlay');
+    overlay.classList.remove('show');
+}
+
+// Close alert on ESC key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const alertOverlay = document.getElementById('customAlertOverlay');
+        const confirmOverlay = document.getElementById('customConfirmOverlay');
+        
+        if (alertOverlay.classList.contains('show')) {
+            closeAlert();
+        }
+        if (confirmOverlay.classList.contains('show')) {
+            closeConfirm(false);
+        }
+    }
+});
+
+// Close on overlay click
+document.getElementById('customAlertOverlay').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeAlert();
+    }
+});
+
+let confirmCallback = null;
+
+/**
+ * Show confirmation dialog
+ * @param {string} message - The message to display
+ * @param {function} callback - Callback function that receives true/false
+ * @param {string} type - Confirm type: 'danger', 'warning', 'info'
+ * @param {string} title - Optional custom title
+ * @param {string} confirmText - Text for confirm button (default: 'Confirm')
+ * @param {string} cancelText - Text for cancel button (default: 'Cancel')
+ */
+function showConfirm(message, callback, type = 'danger', title = null, confirmText = 'Confirm', cancelText = 'Cancel') {
+    const config = confirmConfig[type] || confirmConfig.danger;
+    const overlay = document.getElementById('customConfirmOverlay');
+    const header = document.getElementById('confirmHeader');
+    const icon = document.getElementById('confirmIcon');
+    const titleEl = document.getElementById('confirmTitle');
+    const messageEl = document.getElementById('confirmMessage');
+    const confirmBtn = document.getElementById('confirmOkBtn');
+    const cancelBtn = document.getElementById('confirmCancelBtn');
+    
+    // Set content
+    icon.textContent = config.icon;
+    titleEl.textContent = title || config.title;
+    messageEl.textContent = message;
+    confirmBtn.textContent = confirmText;
+    cancelBtn.textContent = cancelText;
+    
+    // Set header style
+    header.className = 'custom-confirm-header ' + config.headerClass;
+    
+    // Store callback
+    confirmCallback = callback;
+    
+    // Show modal
+    overlay.classList.add('show');
+    
+    // Focus cancel button
+    setTimeout(() => {
+        cancelBtn.focus();
+    }, 100);
+}
+
+/**
+ * Close confirmation dialog
+ * @param {boolean} confirmed - Whether user confirmed or cancelled
+ */
+function closeConfirm(confirmed) {
+    const overlay = document.getElementById('customConfirmOverlay');
+    overlay.classList.remove('show');
+    
+    // Execute callback
+    if (confirmCallback) {
+        confirmCallback(confirmed);
+        confirmCallback = null;
+    }
+}
+
+// Close on overlay click
+document.getElementById('customConfirmOverlay').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeConfirm(false);
+    }
+});
+
+/**
+ * Show toast notification
+ * @param {string} message - The message to display
+ * @param {string} type - Toast type: 'success', 'error', 'warning', 'info'
+ * @param {number} duration - Duration in milliseconds (default: 3000)
+ * @param {string} title - Optional title
+ */
+function showToast(message, type = 'info', duration = 3000, title = null) {
+    const container = document.getElementById('toastContainer');
+    
+    const config = alertConfig[type] || alertConfig.info;
+    const toastId = 'toast-' + Date.now();
+    
+    const toast = document.createElement('div');
+    toast.className = 'toast toast-' + type;
+    toast.id = toastId;
+    
+    const toastTitle = title || config.title;
+    
+    toast.innerHTML = `
+        <span class="toast-icon">${config.icon}</span>
+        <div class="toast-content">
+            <div class="toast-title">${toastTitle}</div>
+            <div class="toast-message">${message}</div>
+        </div>
+        <button class="toast-close" onclick="removeToast('${toastId}')">✕</button>
+    `;
+    
+    container.appendChild(toast);
+    
+    // Auto remove after duration
+    if (duration > 0) {
+        setTimeout(() => {
+            removeToast(toastId);
+        }, duration);
+    }
+}
+
+/**
+ * Remove toast notification
+ * @param {string} toastId - ID of the toast to remove
+ */
+function removeToast(toastId) {
+    const toast = document.getElementById(toastId);
+    if (toast) {
+        toast.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => {
+            toast.remove();
+        }, 300);
+    }
+}
+
+// Example helper functions that replace standard alert/confirm
+window.alert = function(message) {
+    showAlert(message, 'info');
+};
+
+window.confirm = function(message) {
+    return new Promise((resolve) => {
+        showConfirm(message, resolve, 'warning');
+    });
+};
+</script> {% endcomment %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- Alert Modal -->
+<div class="custom-alert-overlay" id="customAlertOverlay">
+    <div class="custom-alert-modal">
+        <div class="custom-alert-header" id="alertHeader">
+            <span class="custom-alert-icon" id="alertIcon"></span>
+            <h3 class="custom-alert-title" id="alertTitle"></h3>
+        </div>
+        <div class="custom-alert-body">
+            <p class="custom-alert-message" id="alertMessage"></p>
+        </div>
+        <div class="custom-alert-footer">
+            <button class="btn-alert btn-alert-primary" id="alertOkBtn" onclick="closeAlert()">OK</button>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="custom-confirm-overlay" id="customConfirmOverlay">
+    <div class="custom-confirm-modal">
+        <div class="custom-confirm-header" id="confirmHeader">
+            <span class="custom-confirm-icon" id="confirmIcon"></span>
+            <h3 class="custom-confirm-title" id="confirmTitle"></h3>
+        </div>
+        <div class="custom-confirm-body">
+            <p class="custom-confirm-message" id="confirmMessage"></p>
+        </div>
+        <div class="custom-confirm-footer">
+            <button class="btn-confirm btn-confirm-secondary" id="confirmCancelBtn" onclick="closeConfirm(false)">Cancel</button>
+            <button class="btn-confirm btn-confirm-primary" id="confirmOkBtn" onclick="closeConfirm(true)">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Notification Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<style>
+/* Alert Modal Styles */
+.custom-alert-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.2s ease;
+}
+
+.custom-alert-overlay.show {
+    display: flex;
+}
+
+.custom-alert-modal {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    min-width: 400px;
+    max-width: 600px;
+    animation: slideDown 0.3s ease;
+    overflow: hidden;
+}
+
+.custom-alert-header {
+    padding: 25px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.custom-alert-header.alert-success {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    border-bottom: none;
+}
+
+.custom-alert-header.alert-error {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    color: white;
+    border-bottom: none;
+}
+
+.custom-alert-header.alert-warning {
+    background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+    color: #212529;
+    border-bottom: none;
+}
+
+.custom-alert-header.alert-info {
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    color: white;
+    border-bottom: none;
+}
+
+.custom-alert-icon {
+    font-size: 32px;
+    line-height: 1;
+}
+
+.custom-alert-title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.custom-alert-body {
+    padding: 25px;
+}
+
+.custom-alert-message {
+    margin: 0;
+    font-size: 16px;
+    color: #495057;
+    line-height: 1.6;
+}
+
+.custom-alert-footer {
+    padding: 20px 25px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    background: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+}
+
+.btn-alert {
+    padding: 10px 24px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 80px;
+}
+
+.btn-alert-primary {
+    background: #007bff;
+    color: white;
+}
+
+.btn-alert-primary:hover {
+    background: #0056b3;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+}
+
+/* Confirmation Modal Styles */
+.custom-confirm-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.2s ease;
+}
+
+.custom-confirm-overlay.show {
+    display: flex;
+}
+
+.custom-confirm-modal {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    min-width: 450px;
+    max-width: 600px;
+    animation: slideDown 0.3s ease;
+    overflow: hidden;
+}
+
+.custom-confirm-header {
+    padding: 25px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.custom-confirm-header.confirm-danger {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    color: white;
+    border-bottom: none;
+}
+
+.custom-confirm-header.confirm-warning {
+    background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+    color: #212529;
+    border-bottom: none;
+}
+
+.custom-confirm-header.confirm-info {
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    color: white;
+    border-bottom: none;
+}
+
+.custom-confirm-icon {
+    font-size: 32px;
+    line-height: 1;
+}
+
+.custom-confirm-title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.custom-confirm-body {
+    padding: 25px;
+}
+
+.custom-confirm-message {
+    margin: 0;
+    font-size: 16px;
+    color: #495057;
+    line-height: 1.6;
+}
+
+.custom-confirm-footer {
+    padding: 20px 25px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    background: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+}
+
+.btn-confirm {
+    padding: 10px 24px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 100px;
+}
+
+.btn-confirm-primary {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-confirm-primary:hover {
+    background: #c82333;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+}
+
+.btn-confirm-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-confirm-secondary:hover {
+    background: #5a6268;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
+}
+
+/* Toast Notification Styles */
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+}
+
+.toast {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    padding: 16px 20px;
+    min-width: 300px;
+    max-width: 400px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    pointer-events: auto;
+    animation: slideInRight 0.3s ease;
+    border-left: 4px solid #007bff;
+}
+
+.toast.toast-success {
+    border-left-color: #28a745;
+}
+
+.toast.toast-error {
+    border-left-color: #dc3545;
+}
+
+.toast.toast-warning {
+    border-left-color: #ffc107;
+}
+
+.toast.toast-info {
+    border-left-color: #17a2b8;
+}
+
+.toast-icon {
+    font-size: 24px;
+    line-height: 1;
+}
+
+.toast-content {
+    flex: 1;
+}
+
+.toast-title {
+    font-weight: 600;
+    font-size: 14px;
+    margin: 0 0 4px 0;
+    color: #212529;
+}
+
+.toast-message {
+    font-size: 13px;
+    margin: 0;
+    color: #6c757d;
+}
+
+.toast-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #6c757d;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.toast-close:hover {
+    background: #f8f9fa;
+    color: #212529;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .custom-alert-modal,
+    .custom-confirm-modal {
+        min-width: 90vw;
+        margin: 20px;
+    }
+    
+    .toast-container {
+        left: 20px;
+        right: 20px;
+    }
+    
+    .toast {
+        min-width: auto;
+        max-width: none;
+    }
+}
+</style>
+
+<script>
+// Alert Configuration
+const alertConfig = {
+    success: {
+        icon: '✅',
+        title: 'Success',
+        headerClass: 'alert-success'
+    },
+    error: {
+        icon: '❌',
+        title: 'Error',
+        headerClass: 'alert-error'
+    },
+    warning: {
+        icon: '⚠️',
+        title: 'Warning',
+        headerClass: 'alert-warning'
+    },
+    info: {
+        icon: 'ℹ️',
+        title: 'Information',
+        headerClass: 'alert-info'
+    }
+};
+
+// Confirmation Configuration
+const confirmConfig = {
+    danger: {
+        icon: '⚠️',
+        title: 'Confirm Action',
+        headerClass: 'confirm-danger'
+    },
+    warning: {
+        icon: '⚠️',
+        title: 'Are you sure?',
+        headerClass: 'confirm-warning'
+    },
+    info: {
+        icon: 'ℹ️',
+        title: 'Confirmation',
+        headerClass: 'confirm-info'
+    }
+};
+
+/**
+ * Show custom alert
+ * @param {string} message - The message to display
+ * @param {string} type - Alert type: 'success', 'error', 'warning', 'info'
+ * @param {string} title - Optional custom title
+ */
+function showAlert(message, type = 'info', title = null) {
+    const config = alertConfig[type] || alertConfig.info;
+    const overlay = document.getElementById('customAlertOverlay');
+    const header = document.getElementById('alertHeader');
+    const icon = document.getElementById('alertIcon');
+    const titleEl = document.getElementById('alertTitle');
+    const messageEl = document.getElementById('alertMessage');
+    
+    // Set content
+    icon.textContent = config.icon;
+    titleEl.textContent = title || config.title;
+    messageEl.textContent = message;
+    
+    // Set header style
+    header.className = 'custom-alert-header ' + config.headerClass;
+    
+    // Show modal
+    overlay.classList.add('show');
+    
+    // Focus OK button
+    setTimeout(() => {
+        document.getElementById('alertOkBtn').focus();
+    }, 100);
+}
+
+/**
+ * Close alert
+ */
+function closeAlert() {
+    const overlay = document.getElementById('customAlertOverlay');
+    overlay.classList.remove('show');
+}
+
+// Close alert on ESC key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const alertOverlay = document.getElementById('customAlertOverlay');
+        const confirmOverlay = document.getElementById('customConfirmOverlay');
+        
+        if (alertOverlay.classList.contains('show')) {
+            closeAlert();
+        }
+        if (confirmOverlay.classList.contains('show')) {
+            closeConfirm(false);
+        }
+    }
+});
+
+// Close on overlay click
+document.getElementById('customAlertOverlay').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeAlert();
+    }
+});
+
+let confirmCallback = null;
+
+/**
+ * Show confirmation dialog
+ * @param {string} message - The message to display
+ * @param {function} callback - Callback function that receives true/false
+ * @param {string} type - Confirm type: 'danger', 'warning', 'info'
+ * @param {string} title - Optional custom title
+ * @param {string} confirmText - Text for confirm button (default: 'Confirm')
+ * @param {string} cancelText - Text for cancel button (default: 'Cancel')
+ */
+function showConfirm(message, callback, type = 'danger', title = null, confirmText = 'Confirm', cancelText = 'Cancel') {
+    const config = confirmConfig[type] || confirmConfig.danger;
+    const overlay = document.getElementById('customConfirmOverlay');
+    const header = document.getElementById('confirmHeader');
+    const icon = document.getElementById('confirmIcon');
+    const titleEl = document.getElementById('confirmTitle');
+    const messageEl = document.getElementById('confirmMessage');
+    const confirmBtn = document.getElementById('confirmOkBtn');
+    const cancelBtn = document.getElementById('confirmCancelBtn');
+    
+    // Set content
+    icon.textContent = config.icon;
+    titleEl.textContent = title || config.title;
+    messageEl.textContent = message;
+    confirmBtn.textContent = confirmText;
+    cancelBtn.textContent = cancelText;
+    
+    // Set header style
+    header.className = 'custom-confirm-header ' + config.headerClass;
+    
+    // Store callback
+    confirmCallback = callback;
+    
+    // Show modal
+    overlay.classList.add('show');
+    
+    // Focus cancel button
+    setTimeout(() => {
+        cancelBtn.focus();
+    }, 100);
+}
+
+/**
+ * Close confirmation dialog
+ * @param {boolean} confirmed - Whether user confirmed or cancelled
+ */
+function closeConfirm(confirmed) {
+    const overlay = document.getElementById('customConfirmOverlay');
+    overlay.classList.remove('show');
+    
+    // Execute callback
+    if (confirmCallback) {
+        confirmCallback(confirmed);
+        confirmCallback = null;
+    }
+}
+
+// Close on overlay click
+document.getElementById('customConfirmOverlay').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeConfirm(false);
+    }
+});
+
+/**
+ * Show toast notification
+ * @param {string} message - The message to display
+ * @param {string} type - Toast type: 'success', 'error', 'warning', 'info'
+ * @param {number} duration - Duration in milliseconds (default: 3000)
+ * @param {string} title - Optional title
+ */
+function showToast(message, type = 'info', duration = 3000, title = null) {
+    const container = document.getElementById('toastContainer');
+    
+    const config = alertConfig[type] || alertConfig.info;
+    const toastId = 'toast-' + Date.now();
+    
+    const toast = document.createElement('div');
+    toast.className = 'toast toast-' + type;
+    toast.id = toastId;
+    
+    const toastTitle = title || config.title;
+    
+    toast.innerHTML = `
+        <span class="toast-icon">${config.icon}</span>
+        <div class="toast-content">
+            <div class="toast-title">${toastTitle}</div>
+            <div class="toast-message">${message}</div>
+        </div>
+        <button class="toast-close" onclick="removeToast('${toastId}')">✕</button>
+    `;
+    
+    container.appendChild(toast);
+    
+    // Auto remove after duration
+    if (duration > 0) {
+        setTimeout(() => {
+            removeToast(toastId);
+        }, duration);
+    }
+}
+
+/**
+ * Remove toast notification
+ * @param {string} toastId - ID of the toast to remove
+ */
+function removeToast(toastId) {
+    const toast = document.getElementById(toastId);
+    if (toast) {
+        toast.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => {
+            toast.remove();
+        }, 300);
+    }
+}
+
+// Example helper functions that replace standard alert/confirm
+window.alert = function(message) {
+    showAlert(message, 'info');
+};
+
+window.confirm = function(message) {
+    return new Promise((resolve) => {
+        showConfirm(message, resolve, 'warning');
+    });
+};
+</script> 

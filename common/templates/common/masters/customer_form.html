@@ -1,0 +1,808 @@
+{% extends 'common/base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title|default:"Company Information" }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'common/css/universal_form.css' %}">
+<style>
+/* Autocomplete dropdown styles */
+.autocomplete-container {
+    position: relative;
+}
+
+.autocomplete-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: 300px;
+    overflow-y: auto;
+    background: white;
+    border: 1px solid #ddd;
+    border-top: none;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    z-index: 1000;
+    display: none;
+}
+
+.autocomplete-dropdown.active {
+    display: block;
+}
+
+.autocomplete-item {
+    padding: 10px 15px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background 0.2s;
+}
+
+.autocomplete-item:hover {
+    background: #f8f9fa;
+}
+
+.autocomplete-item.selected {
+    background: #e3f2fd;
+}
+
+.autocomplete-item-primary {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 2px;
+}
+
+.autocomplete-item-secondary {
+    font-size: 0.85em;
+    color: #666;
+}
+
+.autocomplete-loading {
+    padding: 10px 15px;
+    text-align: center;
+    color: #666;
+}
+
+.autocomplete-no-results {
+    padding: 10px 15px;
+    text-align: center;
+    color: #999;
+    font-style: italic;
+}
+
+/* Loading indicator for fields */
+.field-loading {
+    position: relative;
+}
+
+.field-loading::after {
+    content: '';
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: translateY(-50%) rotate(0deg); }
+    100% { transform: translateY(-50%) rotate(360deg); }
+}
+
+/* Visual feedback for lookup fields */
+.lookup-loading {
+    position: relative;
+}
+
+.lookup-loading::after {
+    content: '🔍';
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.record-found {
+    border-color: #28a745 !important;
+    background-color: #f0fff4 !important;
+}
+
+.record-not-found {
+    border-color: #ffc107 !important;
+    background-color: #fffbf0 !important;
+}
+
+/* Keyboard navigation highlight */
+.autocomplete-item.keyboard-selected {
+    background: #e3f2fd;
+    border-left: 3px solid #2196f3;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+{% include 'common/includes/universal_form.html' with form_id=form_config.form_id title=form_config.title icon=form_config.icon action=form_config.action background=form_config.background buttons=form_config.buttons menu_items=form_config.menu_items groups=form_config.groups fields=form_config.fields footer_status=form_config.footer_status %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'common/js/universal_form.js' %}"></script>
+
+<script>
+// ============================================================================
+// CONFIGURATION
+// ============================================================================
+const LOOKUP_CONFIG = {
+    lookupUrl: "{% url 'common:lookup_company' %}",
+    debounceDelay: 500,
+    lookupField: 'company_code',
+    lookupDbField: 'CompanyId'
+};
+
+const AUTOCOMPLETE_CONFIG = {
+    fields: [
+        {
+            fieldName: 'company_name',
+            dbFieldName: 'CompanyName',
+            searchUrl: "{% url 'common:search_company_name' %}",
+            minChars: 2,
+            debounceDelay: 300
+        },
+        {
+            fieldName: 'email',
+            dbFieldName: 'Email',
+            searchUrl: "{% url 'common:search_company_email' %}",
+            minChars: 2,
+            debounceDelay: 300
+        }
+    ]
+};
+
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
+
+function debounce(func, delay) {
+    let timeoutId;
+    return function(...args) {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => func.apply(this, args), delay);
+    };
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function showNotification(message, type = 'info') {
+    const colors = {
+        success: '#28a745',
+        error: '#dc3545',
+        warning: '#ffc107',
+        info: '#17a2b8'
+    };
+    
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${colors[type] || colors.info};
+        color: white;
+        padding: 12px 20px;
+        border-radius: 4px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        z-index: 10000;
+        animation: slideIn 0.3s ease-out;
+    `;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease-out';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+// Add animation styles
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from { transform: translateX(400px); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(400px); opacity: 0; }
+    }
+`;
+document.head.appendChild(style);
+
+// ============================================================================
+// EXACT LOOKUP (for company_code)
+// ============================================================================
+
+function lookupRecord(fieldName, fieldValue, dbFieldName, lookupUrl, formId) {
+    console.log(`[Lookup] Searching ${dbFieldName}=${fieldValue}`);
+    
+    if (!fieldValue || fieldValue.trim() === '') {
+        return;
+    }
+    
+    const inputField = document.querySelector(`[name="${fieldName}"]`);
+    
+    if (inputField) {
+        inputField.classList.add('lookup-loading');
+        inputField.classList.remove('record-found', 'record-not-found');
+    }
+    
+    const url = `${lookupUrl}?field=${encodeURIComponent(dbFieldName)}&value=${encodeURIComponent(fieldValue)}`;
+    
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if (inputField) {
+                inputField.classList.remove('lookup-loading');
+            }
+            
+            if (data.success && data.data) {
+                console.log('[Lookup] Record found');
+                populateFormData(formId, data.data);
+                
+                if (inputField) {
+                    inputField.classList.add('record-found');
+                }
+                
+                showNotification('✅ Record loaded', 'success');
+            } else {
+                console.log('[Lookup] Record not found');
+                
+                if (inputField) {
+                    inputField.classList.add('record-not-found');
+                }
+                
+                clearFormExcept(formId, fieldName);
+            }
+        })
+        .catch(error => {
+            console.error('[Lookup] Error:', error);
+            if (inputField) {
+                inputField.classList.remove('lookup-loading');
+            }
+            showNotification('❌ Lookup failed', 'error');
+        });
+}
+
+// ============================================================================
+// AUTOCOMPLETE DROPDOWN
+// ============================================================================
+
+class AutocompleteDropdown {
+    constructor(inputField, config) {
+        this.inputField = inputField;
+        this.config = config;
+        this.dropdown = null;
+        this.currentResults = [];
+        this.selectedIndex = -1;
+        this.isLoading = false;
+        
+        this.init();
+    }
+    
+    init() {
+        // Create dropdown container
+        const container = document.createElement('div');
+        container.className = 'autocomplete-container';
+        
+        // Wrap input field
+        this.inputField.parentNode.insertBefore(container, this.inputField);
+        container.appendChild(this.inputField);
+        
+        // Create dropdown
+        this.dropdown = document.createElement('div');
+        this.dropdown.className = 'autocomplete-dropdown';
+        container.appendChild(this.dropdown);
+        
+        // Attach event listeners
+        this.attachListeners();
+    }
+    
+    attachListeners() {
+        // Debounced search on input
+        const debouncedSearch = debounce((value) => {
+            if (value.length >= this.config.minChars) {
+                this.search(value);
+            } else {
+                this.hide();
+            }
+        }, this.config.debounceDelay);
+        
+        this.inputField.addEventListener('input', (e) => {
+            debouncedSearch(e.target.value);
+        });
+        
+        // Keyboard navigation
+        this.inputField.addEventListener('keydown', (e) => {
+            if (!this.dropdown.classList.contains('active')) return;
+            
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                this.moveSelection(1);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                this.moveSelection(-1);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                this.selectCurrent();
+            } else if (e.key === 'Escape') {
+                this.hide();
+            }
+        });
+        
+        // Hide dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.autocomplete-container')) {
+                this.hide();
+            }
+        });
+    }
+    
+    async search(query) {
+        console.log(`[Autocomplete] Searching for: ${query}`);
+        
+        this.isLoading = true;
+        this.showLoading();
+        
+        // Add loading class to input
+        this.inputField.classList.add('field-loading');
+        
+        const url = `${this.config.searchUrl}?q=${encodeURIComponent(query)}&limit=10`;
+        
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            this.isLoading = false;
+            this.inputField.classList.remove('field-loading');
+            
+            if (data.success && data.results && data.results.length > 0) {
+                this.currentResults = data.results;
+                this.showResults(data.results);
+            } else {
+                this.showNoResults();
+            }
+        } catch (error) {
+            console.error('[Autocomplete] Error:', error);
+            this.isLoading = false;
+            this.inputField.classList.remove('field-loading');
+            this.showError();
+        }
+    }
+    
+    showLoading() {
+        this.dropdown.innerHTML = '<div class="autocomplete-loading">🔍 Searching...</div>';
+        this.dropdown.classList.add('active');
+    }
+    
+    showResults(results) {
+        this.dropdown.innerHTML = '';
+        this.selectedIndex = -1;
+        
+        results.forEach((result, index) => {
+            const item = document.createElement('div');
+            item.className = 'autocomplete-item';
+            item.dataset.index = index;
+            
+            // Use _display field if available, otherwise construct display text
+            if (result._display) {
+                item.innerHTML = `<div class="autocomplete-item-primary">${result._display}</div>`;
+            } else {
+                const primaryText = result[this.config.fieldName] || 'Unknown';
+                item.innerHTML = `<div class="autocomplete-item-primary">${primaryText}</div>`;
+            }
+            
+            // Click handler
+            item.addEventListener('click', () => {
+                this.selectResult(result);
+            });
+            
+            // Hover handler
+            item.addEventListener('mouseenter', () => {
+                this.highlightItem(index);
+            });
+            
+            this.dropdown.appendChild(item);
+        });
+        
+        this.dropdown.classList.add('active');
+    }
+    
+    showNoResults() {
+        this.dropdown.innerHTML = '<div class="autocomplete-no-results">No results found</div>';
+        this.dropdown.classList.add('active');
+    }
+    
+    showError() {
+        this.dropdown.innerHTML = '<div class="autocomplete-no-results">Error loading results</div>';
+        this.dropdown.classList.add('active');
+    }
+    
+    hide() {
+        this.dropdown.classList.remove('active');
+        this.selectedIndex = -1;
+    }
+    
+    moveSelection(direction) {
+        const items = this.dropdown.querySelectorAll('.autocomplete-item');
+        if (items.length === 0) return;
+        
+        // Remove previous selection
+        if (this.selectedIndex >= 0) {
+            items[this.selectedIndex].classList.remove('keyboard-selected');
+        }
+        
+        // Calculate new index
+        this.selectedIndex += direction;
+        
+        // Wrap around
+        if (this.selectedIndex < 0) {
+            this.selectedIndex = items.length - 1;
+        } else if (this.selectedIndex >= items.length) {
+            this.selectedIndex = 0;
+        }
+        
+        // Highlight new selection
+        items[this.selectedIndex].classList.add('keyboard-selected');
+        
+        // Scroll into view
+        items[this.selectedIndex].scrollIntoView({
+            block: 'nearest',
+            behavior: 'smooth'
+        });
+    }
+    
+    highlightItem(index) {
+        const items = this.dropdown.querySelectorAll('.autocomplete-item');
+        items.forEach((item, i) => {
+            item.classList.toggle('keyboard-selected', i === index);
+        });
+        this.selectedIndex = index;
+    }
+    
+    selectCurrent() {
+        if (this.selectedIndex >= 0 && this.selectedIndex < this.currentResults.length) {
+            this.selectResult(this.currentResults[this.selectedIndex]);
+        }
+    }
+    
+    selectResult(result) {
+        console.log('[Autocomplete] Selected:', result);
+        
+        // Populate entire form with selected record data
+        populateFormData('{{ form_config.form_id }}', result);
+        
+        // Hide dropdown
+        this.hide();
+        
+        // Show success notification
+        showNotification('✅ Record selected', 'success');
+    }
+}
+
+// ============================================================================
+// FORM MANIPULATION
+// ============================================================================
+
+function populateFormData(formId, data) {
+    const form = document.getElementById(`${formId}-form`);
+    if (!form) {
+        console.error(`[Populate] Form not found: ${formId}-form`);
+        return;
+    }
+    
+    console.log('[Populate] Filling form with data:', data);
+    
+    Object.keys(data).forEach(fieldName => {
+        // Skip internal fields
+        if (fieldName.startsWith('_')) return;
+        
+        const field = form.querySelector(`[name="${fieldName}"]`);
+        if (field) {
+            const value = data[fieldName];
+            
+            if (field.type === 'checkbox') {
+                field.checked = value === true || value === 1 || value === '1' || value === 'on';
+            } else if (field.type === 'radio') {
+                const radio = form.querySelector(`[name="${fieldName}"][value="${value}"]`);
+                if (radio) radio.checked = true;
+            } else {
+                field.value = value || '';
+            }
+            
+            console.log(`[Populate] ${fieldName} = ${value}`);
+        }
+    });
+}
+
+function clearFormExcept(formId, exceptFields) {
+    const form = document.getElementById(`${formId}-form`);
+    if (!form) return;
+    
+    const keepFields = Array.isArray(exceptFields) ? exceptFields : [exceptFields];
+    
+    console.log('[Clear] Clearing form except:', keepFields);
+    
+    const inputs = form.querySelectorAll('input, select, textarea');
+    inputs.forEach(input => {
+        if (!keepFields.includes(input.name) && input.name !== 'csrfmiddlewaretoken') {
+            if (input.type === 'checkbox' || input.type === 'radio') {
+                input.checked = false;
+            } else {
+                input.value = '';
+            }
+        }
+    });
+    
+    setDefaultDates();
+}
+
+function setDefaultDates() {
+    const currentYear = new Date().getFullYear();
+    const periodFromField = document.querySelector('[name="period_from"]');
+    const periodToField = document.querySelector('[name="period_to"]');
+    
+    if (periodFromField && !periodFromField.value) {
+        periodFromField.value = `${currentYear}-01-01`;
+    }
+    
+    if (periodToField && !periodToField.value) {
+        periodToField.value = `${currentYear}-12-31`;
+    }
+}
+
+// ============================================================================
+// INITIALIZATION
+// ============================================================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('=== COMPANY FORM WITH AUTOCOMPLETE ===');
+    
+    if (typeof openForm === 'function') {
+        openForm('{{ form_config.form_id }}');
+        setTimeout(initializeAll, 200);
+    }
+});
+
+function initializeAll() {
+    initializeLookup();
+    initializeAutocomplete();
+    setDefaultDates();
+}
+
+function initializeLookup() {
+    const form = document.getElementById('{{ form_config.form_id }}-form');
+    if (!form) return;
+    
+    const lookupField = form.querySelector(`[name="${LOOKUP_CONFIG.lookupField}"]`);
+    if (!lookupField) return;
+    
+    console.log(`[Lookup] Initialized on: ${LOOKUP_CONFIG.lookupField}`);
+    
+    const debouncedLookup = debounce((value) => {
+        lookupRecord(
+            LOOKUP_CONFIG.lookupField,
+            value,
+            LOOKUP_CONFIG.lookupDbField,
+            LOOKUP_CONFIG.lookupUrl,
+            '{{ form_config.form_id }}'
+        );
+    }, LOOKUP_CONFIG.debounceDelay);
+    
+    lookupField.addEventListener('input', (e) => {
+        debouncedLookup(e.target.value);
+    });
+    
+    lookupField.addEventListener('blur', (e) => {
+        const value = e.target.value;
+        if (value && value.trim() !== '') {
+            lookupRecord(
+                LOOKUP_CONFIG.lookupField,
+                value,
+                LOOKUP_CONFIG.lookupDbField,
+                LOOKUP_CONFIG.lookupUrl,
+                '{{ form_config.form_id }}'
+            );
+        }
+    });
+}
+
+function initializeAutocomplete() {
+    const form = document.getElementById('{{ form_config.form_id }}-form');
+    if (!form) return;
+    
+    AUTOCOMPLETE_CONFIG.fields.forEach(config => {
+        const field = form.querySelector(`[name="${config.fieldName}"]`);
+        if (field) {
+            console.log(`[Autocomplete] Initialized on: ${config.fieldName}`);
+            new AutocompleteDropdown(field, config);
+        }
+    });
+}
+
+// ============================================================================
+// COMPANY ACTION FUNCTIONS
+// ============================================================================
+
+window.customCloseFormOverlay = function(formId) {
+    window.location.href = "{% url 'common:home' %}";
+};
+
+function newCompany() {
+    if (confirm('Create a new company record? This will clear the current form.')) {
+        const form = document.getElementById('{{ form_config.form_id }}-form');
+        if (form) {
+            form.reset();
+            setDefaultDates();
+            
+            const inputs = form.querySelectorAll('input');
+            inputs.forEach(input => {
+                input.classList.remove('record-found', 'record-not-found', 'lookup-loading', 'field-loading');
+            });
+        }
+    }
+}
+
+function saveCompany() {
+    const form = document.getElementById('{{ form_config.form_id }}-form');
+    if (!form) {
+        alert('Error: Form not found');
+        return;
+    }
+    
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+    
+    const formData = new FormData(form);
+    const csrftoken = getCookie('csrftoken');
+    const saveUrl = "{% url 'common:save_company' %}";
+    
+    const saveButton = event.target;
+    const originalText = saveButton ? saveButton.textContent : '';
+    if (saveButton) {
+        saveButton.disabled = true;
+        saveButton.textContent = '💾 Saving...';
+    }
+    
+    fetch(saveUrl, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': csrftoken || formData.get('csrfmiddlewaretoken') || ''
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (saveButton) {
+            saveButton.disabled = false;
+            saveButton.textContent = originalText;
+        }
+        
+        if (data.success) {
+            showNotification(`✅ ${data.message}`, 'success');
+            if (data.company_id) {
+                const companyCodeField = form.querySelector('[name="company_code"]');
+                if (companyCodeField) {
+                    companyCodeField.value = data.company_id;
+                }
+            }
+        } else {
+            showNotification(`❌ ${data.error}`, 'error');
+        }
+    })
+    .catch(error => {
+        if (saveButton) {
+            saveButton.disabled = false;
+            saveButton.textContent = originalText;
+        }
+        showNotification(`❌ ${error.message}`, 'error');
+    });
+}
+
+function deleteCompany() {
+    const form = document.getElementById('{{ form_config.form_id }}-form');
+    if (!form) return;
+    
+    const formData = new FormData(form);
+    const companyId = formData.get('company_code');
+    const companyName = formData.get('company_name');
+    
+    if (!companyId) {
+        showNotification('⚠️ No company selected', 'warning');
+        return;
+    }
+    
+    if (confirm(`⚠️ Delete "${companyName}" (ID: ${companyId})?\n\nThis cannot be undone.`)) {
+        const csrftoken = getCookie('csrftoken');
+        const deleteUrl = "{% url 'common:delete_company' company_id=0 %}".replace('/0/', `/${companyId}/`);
+        
+        fetch(deleteUrl, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrftoken || '' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification(`✅ ${data.message}`, 'success');
+                form.reset();
+                setDefaultDates();
+            } else {
+                showNotification(`❌ ${data.error}`, 'error');
+            }
+        })
+        .catch(error => {
+            showNotification(`❌ ${error.message}`, 'error');
+        });
+    }
+}
+
+function printCompany() {
+    window.print();
+}
+
+function exportCompany() {
+    const form = document.getElementById('{{ form_config.form_id }}-form');
+    if (!form) return;
+    
+    const formData = new FormData(form);
+    const companyData = {};
+    
+    for (let [key, value] of formData.entries()) {
+        if (key !== 'csrfmiddlewaretoken') {
+            companyData[key] = value;
+        }
+    }
+    
+    const dataStr = JSON.stringify(companyData, null, 2);
+    const dataBlob = new Blob([dataStr], {type: 'application/json'});
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `company_${companyData.company_code || 'export'}_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    showNotification('📤 Company exported', 'success');
+}
+
+function companySettings() {
+    showNotification('⚙️ Settings coming soon...', 'info');
+}
+</script>
+{% endblock %}

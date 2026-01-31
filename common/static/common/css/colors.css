@@ -1,0 +1,255 @@
+/* ========================================================
+   CENTRALIZED COLOR SYSTEM
+   Save as: common/static/common/css/colors.css
+   All application colors defined in one place
+   ======================================================== */
+
+:root {
+    /* ==================== PRIMARY BRAND COLORS ==================== */
+    --color-primary-gradient-start: #667eea;
+    --color-primary-gradient-end: #764ba2;
+    --color-primary: #667eea;
+    --color-primary-dark: #5568d3;
+    --color-primary-light: #8899ee;
+    
+    /* ==================== ACCENT COLORS ==================== */
+    --color-accent-gold: #ffd700;
+    --color-accent-red: #ff4757;
+    --color-accent-blue: #2196F3;
+    --color-accent-green: #4CAF50;
+    --color-accent-orange: #FF9800;
+    
+    /* ==================== BACKGROUND COLORS ==================== */
+    --color-bg-primary: #f5f5f5;
+    --color-bg-secondary: #ffffff;
+    --color-bg-tertiary: #f8f9fa;
+    --color-bg-card: #ffffff;
+    --color-bg-overlay: rgba(0, 0, 0, 0.5);
+    
+    /* Form Background Options */
+    --color-bg-form-white: #ffffff;
+    --color-bg-form-light-gray: #f8f9fa;
+    --color-bg-form-soft-blue: #f0f4ff;
+    --color-bg-form-soft-green: #f0fff4;
+    --color-bg-form-soft-yellow: #fffef0;
+    --color-bg-form-soft-purple: #f9f5ff;
+    --color-bg-form-soft-pink: #fff5f7;
+    
+    /* ==================== TEXT COLORS ==================== */
+    --color-text-primary: #333333;
+    --color-text-secondary: #666666;
+    --color-text-tertiary: #999999;
+    --color-text-muted: #adb5bd;
+    --color-text-white: #ffffff;
+    --color-text-link: #667eea;
+    --color-text-link-hover: #5568d3;
+    
+    /* ==================== BORDER COLORS ==================== */
+    --color-border-light: #e0e0e0;
+    --color-border-medium: #dee2e6;
+    --color-border-dark: #ced4da;
+    --color-border-primary: #667eea;
+    
+    /* ==================== SIDEBAR COLORS ==================== */
+    --color-sidebar-bg-start: #667eea;
+    --color-sidebar-bg-end: #764ba2;
+    --color-sidebar-header-bg: rgba(0, 0, 0, 0.1);
+    --color-sidebar-item-hover: rgba(255, 255, 255, 0.1);
+    --color-sidebar-item-active: rgba(255, 255, 255, 0.15);
+    --color-sidebar-text: #ffffff;
+    
+    /* ==================== BUTTON COLORS ==================== */
+    /* Primary Buttons */
+    --color-btn-primary-bg: #007bff;
+    --color-btn-primary-bg-hover: #0056b3;
+    --color-btn-primary-text: #ffffff;
+    
+    /* Success Buttons */
+    --color-btn-success-bg: #28a745;
+    --color-btn-success-bg-hover: #218838;
+    --color-btn-success-text: #ffffff;
+    
+    /* Danger Buttons */
+    --color-btn-danger-bg: #dc3545;
+    --color-btn-danger-bg-hover: #c82333;
+    --color-btn-danger-text: #ffffff;
+    
+    /* Warning Buttons */
+    --color-btn-warning-bg: #ffc107;
+    --color-btn-warning-bg-hover: #e0a800;
+    --color-btn-warning-text: #212529;
+    
+    /* Secondary Buttons */
+    --color-btn-secondary-bg: #6c757d;
+    --color-btn-secondary-bg-hover: #5a6268;
+    --color-btn-secondary-text: #ffffff;
+    
+    /* Info Buttons */
+    --color-btn-info-bg: #17a2b8;
+    --color-btn-info-bg-hover: #138496;
+    --color-btn-info-text: #ffffff;
+    
+    /* ==================== STAT CARD COLORS ==================== */
+    --color-stat-card-1: #667eea;
+    --color-stat-card-2: #2196F3;
+    --color-stat-card-3: #4CAF50;
+    --color-stat-card-4: #FF9800;
+    
+    /* ==================== ALERT/MESSAGE COLORS ==================== */
+    /* Success Alert */
+    --color-alert-success-bg: #d4edda;
+    --color-alert-success-border: #28a745;
+    --color-alert-success-text: #155724;
+    
+    /* Error Alert */
+    --color-alert-error-bg: #f8d7da;
+    --color-alert-error-border: #dc3545;
+    --color-alert-error-text: #721c24;
+    
+    /* Info Alert */
+    --color-alert-info-bg: #d1ecf1;
+    --color-alert-info-border: #17a2b8;
+    --color-alert-info-text: #0c5460;
+    
+    /* Warning Alert */
+    --color-alert-warning-bg: #fff3cd;
+    --color-alert-warning-border: #ffc107;
+    --color-alert-warning-text: #856404;
+    
+    /* ==================== FORM ELEMENT COLORS ==================== */
+    --color-form-input-bg: #ffffff;
+    --color-form-input-border: #ced4da;
+    --color-form-input-border-focus: #667eea;
+    --color-form-input-text: #495057;
+    --color-form-input-placeholder: #6c757d;
+    --color-form-label-text: #555555;
+    --color-form-label-required: #dc3545;
+    
+    /* ==================== TABLE COLORS ==================== */
+    --color-table-header-bg: #f8f9fa;
+    --color-table-header-text: #333333;
+    --color-table-row-even: #ffffff;
+    --color-table-row-odd: #f8f9fa;
+    --color-table-row-hover: #e9ecef;
+    --color-table-border: #dee2e6;
+    
+    /* ==================== MODAL COLORS ==================== */
+    --color-modal-overlay: rgba(0, 0, 0, 0.5);
+    --color-modal-bg: #ffffff;
+    --color-modal-header-bg-start: #667eea;
+    --color-modal-header-bg-end: #764ba2;
+    --color-modal-header-text: #ffffff;
+    
+    /* ==================== FOOTER COLORS ==================== */
+    --color-footer-bg: #ffffff;
+    --color-footer-border: #dee2e6;
+    --color-footer-text: #666666;
+    --color-footer-progress-bg: #e9ecef;
+    --color-footer-progress-fill-start: #667eea;
+    --color-footer-progress-fill-end: #764ba2;
+    
+    /* ==================== MINIMIZED FORM COLORS ==================== */
+    --color-minimized-form-bg: #ffffff;
+    --color-minimized-form-border: #dee2e6;
+    --color-minimized-form-hover: #f8f9fa;
+    --color-minimized-btn-bg: rgba(0, 0, 0, 0.05);
+    --color-minimized-btn-hover: rgba(0, 0, 0, 0.1);
+    
+    /* ==================== DROPDOWN COLORS ==================== */
+    --color-dropdown-bg: #ffffff;
+    --color-dropdown-border: #dee2e6;
+    --color-dropdown-item-hover: #f1f5f9;
+    --color-dropdown-shadow: rgba(0, 0, 0, 0.2);
+    
+    /* ==================== DESIGN SIDEBAR COLORS ==================== */
+    --color-design-sidebar-bg: #ffffff;
+    --color-design-sidebar-shadow: rgba(0, 0, 0, 0.3);
+    --color-design-section-border: #e2e8f0;
+    
+    /* ==================== SHADOWS ==================== */
+    --shadow-small: 0 2px 4px rgba(0, 0, 0, 0.1);
+    --shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --shadow-large: 0 10px 40px rgba(0, 0, 0, 0.3);
+    --shadow-primary: 0 2px 8px rgba(102, 126, 234, 0.3);
+    --shadow-dropdown: 0 10px 30px rgba(0, 0, 0, 0.2);
+    
+    /* ==================== HOVER EFFECTS ==================== */
+    --color-hover-overlay: rgba(0, 0, 0, 0.05);
+    --color-hover-primary: rgba(102, 126, 234, 0.1);
+    
+    /* ==================== DISABLED STATE ==================== */
+    --color-disabled-bg: #e9ecef;
+    --color-disabled-text: #6c757d;
+    --color-disabled-border: #ced4da;
+    
+    /* ==================== SCROLLBAR COLORS ==================== */
+    --color-scrollbar-track: #f1f1f1;
+    --color-scrollbar-thumb: #888888;
+    --color-scrollbar-thumb-hover: #555555;
+    --color-scrollbar-sidebar: rgba(255, 255, 255, 0.3);
+    
+    /* ==================== TRANSITION TIMINGS ==================== */
+    --transition-fast: 0.15s;
+    --transition-normal: 0.2s;
+    --transition-medium: 0.3s;
+    --transition-slow: 0.4s;
+    
+    /* ==================== BORDER RADIUS ==================== */
+    --radius-small: 4px;
+    --radius-medium: 8px;
+    --radius-large: 12px;
+    --radius-xlarge: 16px;
+    --radius-circle: 50%;
+    
+    /* ==================== SPACING ==================== */
+    --spacing-xs: 5px;
+    --spacing-sm: 10px;
+    --spacing-md: 15px;
+    --spacing-lg: 20px;
+    --spacing-xl: 30px;
+    
+    /* ==================== Z-INDEX LAYERS ==================== */
+    --z-sidebar: 100;
+    --z-header: 90;
+    --z-footer: 9997;
+    --z-modal-overlay: 9998;
+    --z-modal: 9999;
+    --z-dropdown: 10000;
+    --z-design-sidebar: 10001;
+    --z-messages: 10002;
+    
+    /* ==================== GRADIENT ALIASES ==================== */
+    --gradient-primary: linear-gradient(135deg, var(--color-primary-gradient-start) 0%, var(--color-primary-gradient-end) 100%);
+    --gradient-sidebar: linear-gradient(135deg, var(--color-sidebar-bg-start) 0%, var(--color-sidebar-bg-end) 100%);
+    --gradient-progress: linear-gradient(90deg, var(--color-footer-progress-fill-start) 0%, var(--color-footer-progress-fill-end) 100%);
+    --gradient-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    --gradient-danger: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    --gradient-warning: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+/* ==================== DARK MODE SUPPORT (Optional) ==================== */
+@media (prefers-color-scheme: dark) {
+    :root[data-theme="dark"] {
+        --color-bg-primary: #1a1a1a;
+        --color-bg-secondary: #2d2d2d;
+        --color-bg-tertiary: #242424;
+        --color-bg-card: #2d2d2d;
+        
+        --color-text-primary: #e0e0e0;
+        --color-text-secondary: #b0b0b0;
+        --color-text-tertiary: #808080;
+        
+        --color-border-light: #404040;
+        --color-border-medium: #505050;
+        --color-border-dark: #606060;
+        
+        --color-form-input-bg: #2d2d2d;
+        --color-form-input-border: #505050;
+        --color-form-input-text: #e0e0e0;
+        
+        --color-dropdown-bg: #2d2d2d;
+        --color-dropdown-item-hover: #3d3d3d;
+        
+        --color-design-sidebar-bg: #2d2d2d;
+    }
+}

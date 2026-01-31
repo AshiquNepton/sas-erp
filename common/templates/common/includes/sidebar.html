@@ -1,0 +1,41 @@
+{% load static %}
+
+<!-- Sidebar Navigation -->
+<aside class="sidebar-navbar" id="sidebar">
+    <div class="sidebar-header">
+        <div class="logo-section">
+            <div class="logo-text">{{ company_info.short_name|default:"Nepton" }}</div>
+            <div class="logo-subtext">{{ company_info.tagline|default:"Business System" }}</div>
+        </div>
+        <button class="toggle-btn" onclick="toggleSidebar()">☰</button>
+    </div>
+
+    <div class="nav-sections">
+        {% for section in navbar_config.sections %}
+        <div class="nav-section {% if section.active %}expanded{% endif %}" id="section-{{ section.id }}">
+            <div class="nav-section-header {% if section.active %}active{% endif %}" 
+                 onclick="toggleSection('{{ section.id }}')">
+                <div class="nav-section-left">
+                    <span class="nav-icon">{{ section.icon }}</span>
+                    <span class="nav-label">{{ section.label }}</span>
+                </div>
+                <span class="nav-arrow">▼</span>
+            </div>
+            <div class="nav-subitems">
+                {% for item in section.items %}
+                <a href="{% if item.url != '#' %}{% url item.url %}{% else %}javascript:void(0){% endif %}" 
+                   class="nav-subitem {% if item.active %}active{% endif %}"
+                   onclick="handleSubitemClick(event, '{{ section.id }}')">
+                    <span>{{ item.label }}</span>
+                    {% if item.count %}
+                    <span class="subitem-badge">{{ item.count }}</span>
+                    {% elif item.status %}
+                    <span class="subitem-status">{{ item.status }}</span>
+                    {% endif %}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</aside>
